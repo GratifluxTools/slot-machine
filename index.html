@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>スロットマシン</title>
+  <style>
+    body {
+      text-align: center;
+      font-family: sans-serif;
+      background: #222;
+      color: #fff;
+    }
+    .reel {
+      width: 80px;
+      height: 240px;
+      overflow: hidden;
+      border: 2px solid #fff;
+      margin: 0 10px;
+      background: #000;
+    }
+    .reel-inner img {
+      width: 100%;
+      height: 80px;
+      display: block;
+    }
+    #reels {
+      display: flex;
+      justify-content: center;
+      margin: 20px;
+    }
+    button {
+      margin: 5px;
+      padding: 10px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎰 スロットマシン</h1>
+  <p>クレジット：<span id="credit">100</span></p>
+  <p>BET：<span id="bet">1</span></p>
+  <div>
+    <button onclick="changeBet(-1)">－</button>
+    <button onclick="changeBet(1)">＋</button>
+    <button onclick="setMaxBet()">MAX BET</button>
+  </div>
+  <button id="spinBtn" onclick="spinAll()">SPIN</button>
+  <div id="reels">
+    <div class="reel" id="reel0"></div>
+    <div class="reel" id="reel1"></div>
+    <div class="reel" id="reel2"></div>
+  </div>
+  <div>
+    <button onclick="stopReel(0)" id="stop0" disabled>STOP 左</button>
+    <button onclick="stopReel(1)" id="stop1" disabled>STOP 中</button>
+    <button onclick="stopReel(2)" id="stop2" disabled>STOP 右</button>
+  </div>
+
+  <script>
+const symbols = ["seven", "bar", "diamond", "bell", "star", "cherry"];
+const symbolHeight = 80;
+const reelSpeed = 4;
+let bet = 1;
+let credit = 100;
+let freeSpin = false;
+
+let spinning = [false, false, false];
+let reelOffsets = [0, 0, 0];
+let animationFrames = [null, null, null];
+let reelContainers = [];
+let reelValues = [[], [], []];
+let stopCount = 0;
+
+function changeBet(delta) {
+  bet = Math.max(1, Math.min(3, bet + delta));
+  document.getElementById("bet").textContent = bet;
+}
+
+function setMaxBet() {
+  bet = 3;
+  document.getElementById("bet").textContent = bet;
+}
+
+function buildReels() {
+  const customReelSymbols = [
+    ["seven", "bar", "diamond", "bell", "star", "cherry"], // 左リール
+    ["seven", "bar", "diamond", "bell", "star", "cherry"], // 中央リール
+    ["seven", "bar", "diamond", "bell", "star", "cherry"]  // 右リール
+  ];
+
+  for (let i = 0; i < 3; i++) {
+    const reel = document.getElementById("reel" + i);
+    reel.innerHTML = "";
+    const container = document.createElement("div");
+    container.className = "reel-inner";
+    container.style.position = "relative";
+    container.style.top = "0px";
+    reel.appendChild(container);
+    reelContainers[i] = container;
+
+    // リールの中身を好きな回数だけループして複製（例：5回）
+    for (let k = 0; k < 5; k++) {
+      for (let sym of customReelSymbols[i]) {
+        const img = document.createElement("img");
+        img.src = `img/${sym}.png`;
+        img.alt = sym;
+        container.appendChild(img);
+      }
+    }
+
+    const maxOffset = customReelSymbols[i].length * 3 * symbolHeight;
+    const offset = Math.floor(Math.random() * customReelSymbols[i].length) * symbolHeight;
+    reelOffsets[i] = maxOffset - offset;
+    container.style.top = `-${reelOffsets[i]}px`;
+  }
+}
+
+function spinAll() {
+  if (!freeSpin && credit < bet) {
+    alert("クレジットが足りません");
+    return;
+  }
+
+  if (!freeSpin) {
+    credit -= bet;
+  } else {
+    freeSpin = false;
+  }
+
+  document.getElementById("credit").textContent = credit;
+  document.getElementById("spinBtn").disabled = true;
+  stopCount = 0;
+
+  for (let i = 0; i < 3; i++) {
+    spinning[i] = true;
+    document.getElementById("stop" + i).disabled = false;
+    spinReel(i);
+  }
+}
+
+function spinReel(i) {
+  function animate() {
+    if (!spinning[i]) return;
+
+    reelOffsets[i] -= reelSpeed;
+    const maxHeight = symbols.length * 3 * symbolHeight;
+    if (reelOffsets[i] <= 0) reelOffsets[i] = maxHeight;
+
+    reelContainers[i].style.top = `-${reelOffsets[i]}px`;
+    animationFrames[i] = requestAnimationFrame(animate);
+  }
+  animate();
+}
+
+function stopReel(i) {
+  spinning[i] = false;
+  cancelAnimationFrame(animationFrames[i]);
+
+  const snapped = Math.floor(reelOffsets[i] / symbolHeight) * symbolHeight;
+  reelOffsets[i] = snapped;
+  reelContainers[i].style.top = `-${snapped}px`;
+
+  const baseIndex = (symbols.length - ((snapped / symbolHeight) % symbols.length)) % symbols.length;
+  const visible = [];
+  for (let k = 0; k < 3; k++) {
+    visible.push(symbols[(baseIndex + k) % symbols.length]);
+  }
+  reelValues[i] = visible;
+
+  document.getElementById("stop" + i).disabled = true;
+
+  stopCount++;
+  if (stopCount === 3) {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        checkResult();
+        document.getElementById("spinBtn").disabled = false;
+      });
+    });
+  }
+}
+
+function checkResult() {
+  const top = [reelValues[0][0], reelValues[1][0], reelValues[2][0]];
+  const mid = [reelValues[0][1], reelValues[1][1], reelValues[2][1]];
+  const bot = [reelValues[0][2], reelValues[1][2], reelValues[2][2]];
+  const diag1 = [reelValues[0][0], reelValues[1][1], reelValues[2][2]];
+  const diag2 = [reelValues[0][2], reelValues[1][1], reelValues[2][0]];
+
+  let winLines = [];
+
+  if (bet >= 1 && isSame(mid)) winLines.push(mid);
+  if (bet >= 2) {
+    if (isSame(top)) winLines.push(top);
+    if (isSame(bot)) winLines.push(bot);
+  }
+  if (bet === 3) {
+    if (isSame(diag1)) winLines.push(diag1);
+    if (isSame(diag2)) winLines.push(diag2);
+  }
+
+  const midSevenCount = mid.filter(s => s === "seven").length;
+  const midDiamondCount = mid.filter(s => s === "diamond").length;
+
+  let bonusMessage = "";
+
+  if (midDiamondCount === 2) {
+    const bonusCredit = 30 * bet;
+    credit += bonusCredit;
+    bonusMessage += `🎁 ボーナスクレジット +${bonusCredit}（7が2つ）\n`;
+  }
+
+  if (midSevenCount === 2) {
+    freeSpin = true;
+    bonusMessage += `💎 次回フリースピン（ダイヤモンドが2つ）\n`;
+  }
+
+  if (winLines.length > 0) {
+    let win = 0;
+    for (let line of winLines) {
+      const symbol = line[0];
+      const payout = getPayout(symbol);
+      win += payout * bet;
+    }
+    credit += win;
+    document.getElementById("credit").textContent = credit;
+    alert(`🎉 当たり！+${win} クレジット\n` + bonusMessage);
+  } else if (bonusMessage !== "") {
+    document.getElementById("credit").textContent = credit;
+    alert(bonusMessage);
+  } else {
+    alert("はずれ...");
+  }
+}
+
+function isSame(arr) {
+  return arr.every(s => s === arr[0]);
+}
+
+function getPayout(sym) {
+  switch (sym) {
+    case "seven": return 50;
+    case "bar": return 30;
+    case "diamond": return 20;
+    case "bell": return 10;
+    case "star": return 5;
+    case "cherry": return 3;
+    default: return 0;
+  }
+}
+
+window.onload = buildReels;
+  </script>
+</body>
+</html>
