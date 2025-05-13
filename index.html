@@ -57,6 +57,7 @@
   </div>
 
   <script>
+const symbols = ["seven", "bar", "diamond", "bell", "star", "cherry"];
 const symbolHeight = 80;
 const reelSpeed = 40;
 let bet = 1;
@@ -81,12 +82,6 @@ function setMaxBet() {
 }
 
 function buildReels() {
-  const customReelSymbols = [
-    ["seven", "bar", "diamond", "bell", "star", "cherry"], // 左リール
-    ["seven", "bar", "diamond", "bell", "star", "cherry"], // 中央リール
-    ["seven", "bar", "diamond", "bell", "star", "cherry"]  // 右リール
-  ];
-
   for (let i = 0; i < 3; i++) {
     const reel = document.getElementById("reel" + i);
     reel.innerHTML = "";
@@ -97,9 +92,8 @@ function buildReels() {
     reel.appendChild(container);
     reelContainers[i] = container;
 
-    // リールの中身を好きな回数だけループして複製（例：5回）
     for (let k = 0; k < 5; k++) {
-      for (let sym of customReelSymbols[i]) {
+      for (let sym of symbols) {
         const img = document.createElement("img");
         img.src = `img/${sym}.png`;
         img.alt = sym;
@@ -107,8 +101,8 @@ function buildReels() {
       }
     }
 
-    const maxOffset = customReelSymbols[i].length * 3 * symbolHeight;
-    const offset = Math.floor(Math.random() * customReelSymbols[i].length) * symbolHeight;
+    const maxOffset = symbols.length * 3 * symbolHeight;
+    const offset = Math.floor(Math.random() * symbols.length) * symbolHeight;
     reelOffsets[i] = maxOffset - offset;
     container.style.top = `-${reelOffsets[i]}px`;
   }
