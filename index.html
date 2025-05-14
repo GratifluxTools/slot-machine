@@ -55,9 +55,10 @@
     <button onclick="stopReel(1)" id="stop1" disabled>STOP 中</button>
     <button onclick="stopReel(2)" id="stop2" disabled>STOP 右</button>
   </div>
+  <p><a href="https://github.com/GratifluxTools/slot-machine.git" style="color: white;">GitHub</a></p>
 
   <script>
-const symbols = ["seven", "bar", "diamond", "bell", "star", "cherry"];
+const symbols = ["seven", "cherry", "bell", "star", "bar", "star", "diamond", "cherry", "bell", "skull", "star", "cherry"];
 const symbolHeight = 80;
 const reelSpeed = 40;
 let bet = 1;
@@ -73,11 +74,12 @@ let stopCount = 0;
 
 function changeBet(delta) {
   bet = Math.max(1, Math.min(3, bet + delta));
+  if (bet > credit) bet = credit;
   document.getElementById("bet").textContent = bet;
 }
 
 function setMaxBet() {
-  bet = 3;
+  bet = Math.min(3, credit);
   document.getElementById("bet").textContent = bet;
 }
 
@@ -105,12 +107,22 @@ function buildReels() {
     const offset = Math.floor(Math.random() * symbols.length) * symbolHeight;
     reelOffsets[i] = maxOffset - offset;
     container.style.top = `-${reelOffsets[i]}px`;
+
+    const baseIndex = (symbols.length - ((reelOffsets[i] / symbolHeight) % symbols.length)) % symbols.length;
+    const visible = [];
+    for (let k = 0; k < 3; k++) {
+      visible.push(symbols[(baseIndex + k) % symbols.length]);
+    }
+    reelValues[i] = visible;
   }
 }
 
 function spinAll() {
+
   if (!freeSpin && credit < bet) {
     alert("クレジットが足りません");
+    bet = Math.max(1, credit);
+    document.getElementById("bet").textContent = bet;
     return;
   }
 
@@ -149,14 +161,16 @@ function stopReel(i) {
   spinning[i] = false;
   cancelAnimationFrame(animationFrames[i]);
 
-  const snapped = Math.floor(reelOffsets[i] / symbolHeight) * symbolHeight;
+  const snapped = Math.round(reelOffsets[i] / symbolHeight) * symbolHeight;
   reelOffsets[i] = snapped;
   reelContainers[i].style.top = `-${snapped}px`;
 
-  const baseIndex = (symbols.length - ((snapped / symbolHeight) % symbols.length)) % symbols.length;
-  const visible = [];
-  for (let k = 0; k < 3; k++) {
-    visible.push(symbols[(baseIndex + k) % symbols.length]);
+  const total = symbols.length * 5;
+  let imgIdx = Math.floor(snapped / symbolHeight) % total;
+  let visible = [];
+  for(let k=0; k<3; k++) {
+    let idx = (imgIdx + k) % total;
+    visible.push(symbols[idx % symbols.length]);
   }
   reelValues[i] = visible;
 
@@ -194,11 +208,18 @@ function checkResult() {
 
   const midSevenCount = mid.filter(s => s === "seven").length;
   const midDiamondCount = mid.filter(s => s === "diamond").length;
+  const midSkullCount = mid.filter(s => s === "skull").length;
 
   let bonusMessage = "";
 
+  if (midSkullCount >= 2) {
+    credit -= 100;
+    if (credit < 0) credit = 0;
+    bonusMessage += `💀 skull2個以上！クレジット-100\n`;
+  }
+
   if (midSevenCount === 2) {
-    const bonusCredit = 30 * bet;
+    const bonusCredit = 10 * bet;
     credit += bonusCredit;
     bonusMessage += `🎁 ボーナスクレジット +${bonusCredit}（7が2つ）\n`;
   }
@@ -222,6 +243,7 @@ function checkResult() {
     document.getElementById("credit").textContent = credit;
     alert(bonusMessage);
   } else {
+    document.getElementById("credit").textContent = credit;
     alert("はずれ...");
   }
 }
@@ -238,6 +260,7 @@ function getPayout(sym) {
     case "bell": return 10;
     case "star": return 5;
     case "cherry": return 3;
+    case "skull": return 0;
     default: return 0;
   }
 }
