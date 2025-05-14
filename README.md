@@ -2,6 +2,10 @@
 
 A simple slot machine game built with only HTML, CSS, and JavaScript. Spin the reels, match symbols, and win credits!
 
+## Live Demo
+
+👉 [Try it now!](https://ss872927.stars.ne.jp/slot-machine/)
+
 ## Features
 
 - Credit system (Start with 100 credits)
