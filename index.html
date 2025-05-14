@@ -197,13 +197,13 @@ function checkResult() {
 
   let bonusMessage = "";
 
-  if (midDiamondCount === 2) {
+  if (midSevenCount === 2) {
     const bonusCredit = 30 * bet;
     credit += bonusCredit;
     bonusMessage += `🎁 ボーナスクレジット +${bonusCredit}（7が2つ）\n`;
   }
 
-  if (midSevenCount === 2) {
+  if (midDiamondCount === 2) {
     freeSpin = true;
     bonusMessage += `💎 次回フリースピン（ダイヤモンドが2つ）\n`;
   }
