@@ -48,7 +48,7 @@ A simple browser-based slot machine game. Spin the 3 reels, stop them as you lik
 
 ## Demo
 
-[Slot Machine Demo Page](https://ss872927.stars.ne.jp/slot-machine/)  
+[Slot Machine Demo Page](https://ss872927.stars.ne.jp/slot/)  
 *The demo page is in Japanese.*
 
 ## License
