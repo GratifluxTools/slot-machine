@@ -48,7 +48,7 @@
 
 ## デモページ
 
-[Slot Machine デモページ](https://ss872927.stars.ne.jp/slot-machine/)
+[Slot Machine デモページ](https://ss872927.stars.ne.jp/slot/)
 
 ## ライセンス
 
